@@ -82,7 +82,7 @@ const controller = {
             }
             return res.json({
                 ok: true,
-                proyectoDB
+                proyectos: proyectoDB
             })
         })
         

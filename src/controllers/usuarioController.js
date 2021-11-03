@@ -9,41 +9,54 @@ const controller = {
     crearUsuario: (req, res) => {
         let datos = req.body
 
-        let {nombre, correo, clave} = datos
+        let {nombre, email, password} = datos
 
         try {
             var validar_nombre = !validator.isEmpty(nombre) && !validator.isNumeric(nombre)
-            var validar_correo = !validator.isEmpty(correo) && validator.isEmail(correo)
-            var validar_clave = !validator.isEmpty(clave) && validator.isByteLength(clave, {min: 8})
+            var validar_email = !validator.isEmpty(email) && validator.isEmail(email)
+            var validar_password = !validator.isEmpty(password) && validator.isByteLength(password, {min: 8})
         } catch (error) {
             return res.status(404).send({                
                 message: 'faltan datos en la peticion',
                 datos_solicitados: {
                     nombre: 'string',
-                    correo: 'email',
-                    clave: 'password'
+                    email: 'email',
+                    password: 'password'
                 },
                 datos_enviados: datos
             });
         }
-        if (validar_nombre && validar_correo && validar_clave) {
+        if (validar_nombre && validar_email && validar_password) {
             let usuario = new Usuario({
                 nombre : nombre.replace(/[<>/'"-?_=+@]+/g, ''),
-                correo: datos.correo,
-                clave: bcrypt.hashSync(datos.clave, 10),
+                email: datos.email,
+                password: bcrypt.hashSync(datos.password, 10),
             })
             usuario.save((error, usuarioDB) => {
                 if (error) {
                     return res.status(400).json({
                         ok: false,
-                        error: error.message
+                        error: error.message,
+                        msg: 'Usuario ya existe'
                     })
                 }
+                // generar token
+                let token = jwt.sign({
+                    uid: usuarioDB._id
+                }, process.env.AUTENTICACION_TOKEN, { expiresIn: process.env.CADUCIDAD_TOKEN })
+
+                console.log(`Usuario ${usuarioDB.correo} fue registrado y ha iniciardo sesion`);
+                
 
                 res.json({
                     ok: true,
                     message: 'Usuario creado correctamente',
-                    usuario: usuarioDB
+                    usuario: {
+                        nombre: usuarioDB.nombre,
+                        email: usuarioDB.email,
+                        uid: usuarioDB._id
+                    },
+                    token
                 })
             })
         } else {
@@ -62,23 +75,23 @@ const controller = {
 
     login: (req, res) => {
         let datos = req.body
-        let {correo, clave} = datos
+        let {email, password} = datos
         try {
-            var validar_correo = !validator.isEmpty(correo)
-            var validar_clave = !validator.isEmpty(clave)
+            var validar_email = !validator.isEmpty(email)
+            var validar_password = !validator.isEmpty(password)
         } catch (error) {
             return res.status(404).send({                
                 message: 'faltan datos en la peticion',
                 datos_solicitados: {
-                    correo: 'email',
-                    clave: 'password'
+                    email: 'email',
+                    password: 'password'
                 },
                 datos_enviados: datos
             });
         }
-        if (validar_clave && validar_correo) {
+        if (validar_password && validar_email) {
             
-            Usuario.findOne({correo}, (error, usuarioDB) => {
+            Usuario.findOne({email}, (error, usuarioDB) => {
                 if (error) {
                     return res.status(500).json({
                         ok: false,
@@ -88,17 +101,13 @@ const controller = {
                 if (!usuarioDB) {
                     return res.status(400).json({
                         ok: false,
-                        error: {
-                            message: 'Usuario o clave incorrectos'
-                        }
+                        msg: 'Usuario o password incorrectos',
                     })
                 }
-                if (!bcrypt.compareSync( clave, usuarioDB.clave )) {
+                if (!bcrypt.compareSync( password, usuarioDB.password )) {
                     return res.status(400).json({
                         ok: false,
-                        error: {
-                            message: 'Usuario o clave incorrectos'
-                        }
+                        msg: 'Usuario o password incorrectos',
                     })
                 } 
                 
@@ -107,28 +116,43 @@ const controller = {
                     uid: usuarioDB._id
                 }, process.env.AUTENTICACION_TOKEN, { expiresIn: process.env.CADUCIDAD_TOKEN })
 
-                console.log(`Usuario ${usuarioDB.correo} ha iniciardo sesion`);
+                console.log(`Usuario ${usuarioDB.email} ha iniciardo sesion`);
                 
                 return res.json({
                     ok: true,
                     token,
                     usuario: {
                         nombre: usuarioDB.nombre,
-                        correo: usuarioDB.correo
-                    }
+                        email: usuarioDB.email
+                    },
+                    msg: 'Usuario autenticado correctamente'
                 })            
                 
             })
-
         } else {
             return res.status(400).json({
                 ok: false,
-                error: {
-                    message: 'Faltan datos'
-                }
+                msg: 'Faltan datos'
             })
         }
     },
+
+    usuarioAutenticado: async (req, res) => {
+        try {
+            const usuario = await Usuario.findById(req.userData._id).select('-password')
+            res.json({
+                usuario
+            })
+        } catch (error) {
+            console.log(error)
+            return res.status(500).json({
+                ok: false,
+                msg: 'Error inesperado'
+            })
+        }
+            
+     
+    }
 
 }
 

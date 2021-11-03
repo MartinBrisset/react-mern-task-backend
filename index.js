@@ -1,6 +1,7 @@
 require('dotenv').config({ path: 'vars.env'})
 const express = require('express');
 const morgan = require('morgan');
+const cors = require('cors');
 
 //iniciar express
 const app = express();
@@ -16,6 +17,7 @@ app.use(morgan('dev')); //muestra la ruta en la consola
 
 // app.use(express.urlencoded({extended:true}))
 app.use(express.json()) 
+app.use(cors())
 
 // rutas
 app.use('/', public_rutas)

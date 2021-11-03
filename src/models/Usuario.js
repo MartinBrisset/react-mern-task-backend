@@ -9,13 +9,13 @@ const usuarioSchema = new Schema({
         trim: true,
         required: [true, 'El nombre es requerido']
     },
-    correo: {
+    email: {
         type: String,
         trim: true,
         required: [true, 'El correo es requerido'],
         unique: true
     },
-    clave: {
+    password: {
         type: String,
         trim: true,
         required: [true, 'La clave es requerida']

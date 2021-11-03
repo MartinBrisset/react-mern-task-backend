@@ -8,12 +8,14 @@ const controller = {
     crearTarea: (req, res) => {
         let datos = req.body
 
-        let {nombre, idProyecto} = datos
+        let {nombre, proyectoId} = datos
         let creador = req.userData._id
+        let idProyecto = proyectoId
+
 
         try {
-            var validar_nombre = !validator.isEmpty(nombre) && !validator.isNumeric(nombre)
-            var validar_proyecto = !validator.isEmpty(idProyecto) && validator.isMongoId(idProyecto)
+            var validar_nombre = !validator.isEmpty(nombre)
+            var validar_proyecto = !validator.isEmpty(idProyecto)
         } catch (error) {
             return res.status(404).send({                
                 message: 'faltan datos en la peticion',
@@ -91,7 +93,7 @@ const controller = {
                 error: 'No tienen permisos para agregar tareas a este proyecto',
             }) 
         }    
-        const tareas = await Tarea.find({idProyecto})   
+        const tareas = await Tarea.find({proyecto: idProyecto})   
         return res.json({
             ok: true,
             tareas
@@ -132,18 +134,14 @@ const controller = {
 
             const tarea = {}
 
-            if (nombre) {
-                tarea.nombre = nombre
-            }
-            if (estado) {
-                tarea.estado = estado
-            }
+            tarea.nombre = nombre
+            tarea.estado = estado
 
             tareaUpd = await Tarea.findOneAndUpdate({_id:idTarea}, tarea, {new: true})
 
             res.json({
                 ok: true,
-                tareaUpd
+                tarea: tareaUpd
             })
 
             
@@ -161,7 +159,7 @@ const controller = {
         try {
             let creador = req.userData._id
             let idTarea = req.params.id
-            let {proyecto} = req.body
+            let {proyecto} = req.query
 
             const existeProyecto = await Proyecto.findById(proyecto)
             if (!existeProyecto) {

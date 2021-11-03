@@ -10,7 +10,7 @@ let auth = {
         if(!req.headers.token){
             return res.status(401).send({
                 ok: false,
-                message: 'No hay token en la petición'
+                msg: 'No hay token en la petición'
             });
         }
         //limpiar el token de comillas y guardarlo en variable
@@ -21,14 +21,14 @@ let auth = {
                 console.log(`Token no valido o explirado ${error}`);
                 return res.status(401).json({
                     ok: false,
-                    message: 'Token no valido o expirado'
+                    msg: 'Token no valido o expirado'
                 })
             }
             if (!decoded) {
                 console.log('Error en decoded');
                 return res.status(400).json({
                     ok: false,
-                    message: 'Token no valido o expirado'
+                    msg: 'Token no valido o expirado'
                 }) 
             }
             let idUser = decoded.uid
@@ -37,10 +37,10 @@ let auth = {
                     console.log(error);
                     return res.status(400).json({
                         ok: false,
-                        message: 'No tienes permiso para acceder al sistema, comuniquere con el administrador - Error de Usuario'
+                        msg: 'No tienes permiso para acceder al sistema, comuniquere con el administrador - Error de Usuario'
                     })
                 } else {
-                    console.log(`Usuario ${usuarioDB.correo} trabajando`);
+                    console.log(`Usuario ${usuarioDB.email} trabajando`);
                     req.userData = usuarioDB
                     next();
                 }
